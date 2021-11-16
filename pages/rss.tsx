@@ -9,7 +9,7 @@ import React, {
   createRef,
   SyntheticEvent,
 } from 'react';
-import ReactDOM from 'react-dom'
+import ReactDOM from 'react-dom';
 import moment from 'dayjs';
 import Head from 'next/head'
 // import NextImage from 'next/image'

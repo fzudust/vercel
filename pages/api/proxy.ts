@@ -11,7 +11,7 @@ const axiosConfig: AxiosRequestConfig = {
 const instance = axios.create(axiosConfig);
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const url: string = req.query.url;
+  const url: string = req.query.url as string;
   const start = Date.now();
   try {
     const result = await instance.get<string>(url);

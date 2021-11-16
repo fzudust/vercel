@@ -23,14 +23,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         res.setHeader(key, result.headers[key]);
       }
     }
-    const data: string = result.data.replace(/<script/gi, '<noscript')
+    const data: string = result.data
+      .replace(/<script/gi, '<noscript')
       .replace(/<script/gi, '<noscript')
       .replace(/<\/script>/gi, '</noscript>')
       .replace(/<head>/gi, `<head><base href="${origin}" />`)
-      .replace(
-        /<\/head>/gi,
-        `<link href="/iframe.css" rel="stylesheet"></head>`,
-      );
+      .replace(/<\/head>/gi, `<link href="https://vercel-fzudust.vercel.app/iframe.css" rel="stylesheet"></head>`);
     const ms = Date.now() - start;
     res.setHeader('Server-Timing', `net;dur=${ms}`);
     res.setHeader('Access-Control-Allow-Origin', `*`);

@@ -32,7 +32,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const ms = Date.now() - start;
     res.setHeader('Server-Timing', `net;dur=${ms}`);
     res.setHeader('Access-Control-Allow-Origin', `*`);
-    res.status(200);
+    // res.status(200);
     res.send(data);
   } catch (error) {
     console.error(error)

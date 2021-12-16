@@ -1,0 +1,32 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["mongoDb"]
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("MONGO_DB")
+}
+
+model Rss {
+  id         String    @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  updateTime Int
+  url        String    @unique
+  title      String
+  items      RssItem[]
+  icon       String?
+  query      String?
+}
+
+model RssItem {
+  id          String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+  title       String
+  link        String @unique
+  description String
+  updateTime  Int
+  rssId       String @db.ObjectId
+  rss         Rss    @relation(fields: [rssId], references: [id])
+}

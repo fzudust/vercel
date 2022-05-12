@@ -391,7 +391,7 @@ function Content(props: ContentProps) {
   const ifr = `<iframe
 				title='展示内容'
 				name='contentIframe'
-				src="/iframe.html?url=${encodeURIComponent(item.link)}"
+				src="/iframe.html"
 				seamless
 				frameborder="0"
 				marginwidth="0"

@@ -1,0 +1,17 @@
+{
+  "short_name": "Vercel",
+  "name": "rss reader",
+  "description": "The app that helps you find the best food in town!",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/rss",
+  "display": "standalone",
+  "theme_color": "#1890ff",
+  "gcm_sender_id": "568776137202",
+  "background_color": "#ffffff"
+}

@@ -38,3 +38,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/deploym
 yarn prisma db pull
 yarn prisma generate
 yarn prisma studio
+
+## update
+
+yarn outdated|grep https|awk '{print $1}'|xargs yarn upgrade -L

@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps,jsx-a11y/alt-text */
 import type { NextPage } from 'next'
 import React, {
-  Fragment,
   useRef,
   useState,
   useEffect,
@@ -116,18 +115,18 @@ function useRssList(): UseRssRes {
   const [itemIndex, setItemIndex] = useState<number>(0);
   const dbRef = useRef<IndexedDB>();
 
-  const changeRss = useCallback((i) => {
+  const changeRss = useCallback((i: number) => {
     rssRef.current?.scrollTo(0, 0);
     setRssIndex(i);
     if (i === rssIndex) {
       updateRss()
     }
   }, [rssIndex]);
-  const changeItem = useCallback((i) => {
+  const changeItem = useCallback((i: number) => {
     contentRef.current?.scrollTo(0, 0);
     setItemIndex(i);
   }, []);
-  const deleteRss = useCallback((i) => {
+  const deleteRss = useCallback((i: number) => {
     const currentRss = rssList.splice(i, 1)[0];
     Modal.confirm({
       centered: true,
@@ -141,7 +140,7 @@ function useRssList(): UseRssRes {
       }
     });
   }, [rssList]);
-  const addRss = useCallback(async (url) => {
+  const addRss = useCallback(async (url: string) => {
     const rss = await getRss(url);
     if (rss) {
       rss.icon = getIcon(url);
@@ -329,7 +328,7 @@ function RssList(props: RssListProps) {
     changeRss,
     deleteRss,
   } = props
-  const deleteFn = useCallback((e, i) => {
+  const deleteFn = useCallback((e: SyntheticEvent, i: number) => {
     e.stopPropagation();
     deleteRss(i)
   }, [])
@@ -525,12 +524,27 @@ const RssReader: NextPage = () => {
     item,
   };
 
+  useEffect(() => {
+    window.addEventListener('load', () => {
+      // Is service worker available?
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').then(() => {
+          console.log('Service worker registered!');
+        }).catch((error) => {
+          console.warn('Error registering service worker:');
+          console.warn(error);
+        });
+      }
+    });
+  }, []);
+
   return (
-    <Fragment>
+    <>
       <Head>
         <title>rss</title>
         <meta charSet="utf-8" />
         <link rel="icon" href="/favicon.ico" />
+        <link rel="manifest" href="/manifest.json" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
       </Head>
       <SearchBar {...searchBarProps} />
@@ -540,7 +554,7 @@ const RssReader: NextPage = () => {
         <Content {...contentProps} />
       </div>
       {iframeUrl && <PageIframe {...pageIframeProps} />}
-    </Fragment>
+    </>
   );
 }
 

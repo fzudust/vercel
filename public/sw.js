@@ -70,11 +70,17 @@ registerRoute(cacheRoute); */
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const isDirect = request.url.indexOf('/api/proxy') > -1;
-  const resCache = caches.match(request, {
+  let isCached = true;
+  const res = caches.match(request, {
     ignoreSearch: true
   }).then((response) => {
     if (!response) {
-      return fetch(request);
+      isCached = false;
+      return fetch(request).catch(() => {
+        return fetch(new Request(request.url, {
+          mode: 'no-cors',
+        }))
+      });
     } else {
       return response;
     }
@@ -87,16 +93,17 @@ self.addEventListener('fetch', (event) => {
       }))
     }
   }) */.then(response => {
-    caches.open('cache').then((cache) => {
-      cache.put(request, response);
-    }).catch(e => {
-      console.error('cache error:', e);
-    });
+    if (!isDirect && !isCached) {
+      caches.open('cache').then((cache) => {
+        cache.put(request, response);
+      }).catch(e => {
+        console.error('cache error:', e);
+      });
+    }
     return response.clone();
   }).catch((e) => {
     console.error('service worker fetch error:', e, request);
     throw e;
   });
-  const resFetch = fetch(request);
-  event.respondWith(isDirect ? resFetch : resCache);
+  event.respondWith(res);
 });

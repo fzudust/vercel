@@ -348,7 +348,7 @@ function RssList(props: RssListProps) {
   const deleteFn = useCallback((e: SyntheticEvent, i: number) => {
     e.stopPropagation();
     deleteRss(i)
-  }, [])
+  }, [rssList])
   return (
     <nav ref={rssListRef}>
       {rssList.map((obj, i) =>
@@ -513,7 +513,7 @@ const RssReader: NextPage = () => {
   } = useRssList();
 
   const timerRef = useRef<number>();
-  const flag = rss && rss.query && !rss.loading && item && item.link;
+  const flag = rss && !rss.loading && item && item.link;
   const iframeUrl = flag && `/api/proxy?url=${item.link}` || undefined;
 
   const searchBarProps = {

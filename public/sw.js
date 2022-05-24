@@ -23,7 +23,7 @@ self.addEventListener('install', (event) => {
 });
 
 // https://www.jsdelivr.com/
-const version = '6.5.3';
+/* const version = '6.5.3';
 const cdn = `https://cdn.jsdelivr.net/npm/`;
 const swjs = `${cdn}workbox-sw@${version}/build/workbox-sw.js`;
 self.importScripts(swjs);
@@ -65,4 +65,38 @@ const cacheRoute = new Route(({ url }) => {
   plugins: [new CacheableResponsePlugin({ statuses: [0, 200] })],
 }));
 
-registerRoute(cacheRoute);
+registerRoute(cacheRoute); */
+// 捕获请求并返回缓存数据
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const isDirect = request.url.indexOf('/api/proxy') > -1;
+  const resCache = caches.match(request, {
+    ignoreSearch: true
+  }).then((response) => {
+    if (!response) {
+      return fetch(request);
+    } else {
+      return response;
+    }
+  })/* .then((response) => {
+    if (response.ok) {
+      return response.clone();
+    } else {
+      return fetch(new Request(request.url, {
+        mode: 'no-cors',
+      }))
+    }
+  }) */.then(response => {
+    caches.open('cache').then((cache) => {
+      cache.put(request, response);
+    }).catch(e => {
+      console.error('cache error:', e);
+    });
+    return response.clone();
+  }).catch((e) => {
+    console.error('service worker fetch error:', e, request);
+    throw e;
+  });
+  const resFetch = fetch(request);
+  event.respondWith(isDirect ? resFetch : resCache);
+});

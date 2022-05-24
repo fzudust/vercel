@@ -8,7 +8,7 @@ import React, {
   createRef,
   SyntheticEvent,
 } from 'react';
-import ReactDOM from 'react-dom';
+import ReactDOM, { flushSync } from 'react-dom';
 import moment from 'dayjs';
 import Head from 'next/head'
 // import NextImage from 'next/image'
@@ -75,6 +75,7 @@ interface UseRssRes {
   deleteRss: (i: number) => void;
   changeItem: (i: number) => void;
   initRssList: (data: Rss[], isWriteDb?: boolean) => void;
+  refreshDB: () => void;
 }
 
 interface SearchBarProps {
@@ -202,6 +203,21 @@ function useRssList(): UseRssRes {
     }
   }, []);
 
+  const refreshDB = useCallback(() => {
+    const noBatch = (i: number) => {
+      flushSync(() => {
+        setRssIndex(i);
+      });
+      /* setTimeout(() => {
+        console.log('set', i)
+        setRssIndex(i);
+      }, 100); */
+    }
+    for (let i = 0; i < rssList.length; i++) {
+      noBatch(i);
+    }
+  }, [rssList])
+
   useEffect(() => {
     const db = new IndexedDB({
       name: 'nest-next' as any,
@@ -236,6 +252,7 @@ function useRssList(): UseRssRes {
     deleteRss,
     changeItem,
     initRssList,
+    refreshDB,
   }
 
 }
@@ -411,13 +428,13 @@ function Content(props: ContentProps) {
   return (
     <main>
       {item && <a href={item.link} onClick={e => {
-        pageRef!.current!.style.visibility = 'visible';
+        e.preventDefault();
         const a = e.currentTarget;
         const url = `/api/proxy?url=${a.href}`;
         if (iframeRef.current!.src !== location.origin + url) {
           iframeRef.current!.src = url;
         }
-        e.preventDefault();
+        pageRef.current!.style.visibility = 'visible';
         return false;
       }}><h2>{item.title}</h2></a>}
       {item && item.link && <div id='content' dangerouslySetInnerHTML={{ __html }} ref={contentRef} />}
@@ -492,8 +509,10 @@ const RssReader: NextPage = () => {
     changeRss,
     changeItem,
     initRssList,
+    refreshDB,
   } = useRssList();
 
+  const timerRef = useRef<number>();
   const flag = rss && rss.query && !rss.loading && item && item.link;
   const iframeUrl = flag && `/api/proxy?url=${item.link}` || undefined;
 
@@ -525,17 +544,41 @@ const RssReader: NextPage = () => {
   };
 
   useEffect(() => {
-    window.addEventListener('load', () => {
-      // Is service worker available?
+    const cleanCache = async () => {
+      const cache = await caches.open('cache');
+      const requetList = await cache.keys();
+      requetList.forEach(function (request) {
+        const regexp = /.+(?:\.png|\.jpg|\.jpeg|\.webp|\.gif)$/ig;
+        const { url } = request;
+        if (url.match(regexp)) {
+          cache.delete(request);
+        }
+      });
+    }
+    // window.cleanCache = cleanCache
+    // window.refreshDB = refreshDB
+    const load = async () => {
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js', { scope: '/' }).then(() => {
-          console.log('Service worker registered!');
-        }).catch((error) => {
-          console.warn('Error registering service worker:');
-          console.warn(error);
-        });
+        const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+        console.log(registration);
+        /* const serviceWorker = registration.installing || registration.waiting || registration.active;
+        if (serviceWorker) {
+          console.log(serviceWorker.state);
+          serviceWorker.addEventListener('statechange', function (e: Event) {
+            console.log('serviceWorker状态变化为' + e?.target?.state);
+          });
+        } */
       }
-    });
+      timerRef.current = window.setInterval(() => {
+        refreshDB();
+        cleanCache();
+      }, 24 * 60 * 60 * 1000);
+    };
+    window.addEventListener('load', load);
+    return () => {
+      window.removeEventListener('load', load);
+      clearInterval(timerRef.current);
+    }
   }, []);
 
   return (

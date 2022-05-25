@@ -554,8 +554,15 @@ const RssReader: NextPage = () => {
     const cleanCache = async () => {
       const cache = await caches.open('cache');
       const requetList = await cache.keys();
-      requetList.forEach(function (request) {
-        const regexp = /.+(?:\.png|\.jpg|\.jpeg|\.webp|\.gif)$/ig;
+      requetList.forEach(async (request) => {
+        /* if (['image', 'video', 'audio'].includes(request.destination)) {
+          cache.delete(request);
+        } */
+        /* const response = await caches.match(request, {
+          ignoreSearch: true
+        })
+        response?.headers.forEach(item => console.log(item)) */
+        const regexp = /.+(?:\.png|\.jpg|\.jpeg|\.webp|\.gif|gravatar).*/ig;
         const { url } = request;
         if (url.match(regexp)) {
           cache.delete(request);

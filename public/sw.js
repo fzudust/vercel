@@ -76,11 +76,11 @@ self.addEventListener('fetch', (event) => {
   }).then((response) => {
     if (!response) {
       isCached = false;
-      return fetch(request).catch(() => {
+      return fetch(request)/* .catch((e) => {
         return fetch(new Request(request.url, {
           mode: 'no-cors',
         }))
-      });
+      }); */
     } else {
       return response;
     }

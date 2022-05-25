@@ -562,7 +562,7 @@ const RssReader: NextPage = () => {
           ignoreSearch: true
         })
         response?.headers.forEach(item => console.log(item)) */
-        const regexp = /.+(?:\.png|\.jpg|\.jpeg|\.webp|\.gif|gravatar).*/ig;
+        const regexp = /.+(?:\.png|\.jpg|\.jpeg|\.webp|\.gif|gravatar|\.mp3|\.mp4|img).*/ig;
         const { url } = request;
         if (url.match(regexp)) {
           cache.delete(request);

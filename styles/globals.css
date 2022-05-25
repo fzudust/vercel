@@ -50,3 +50,8 @@ a {
 html {
   scroll-behavior: smooth;
 }
+
+#__next {
+  max-width: 1480px;
+  /* margin: auto; */
+}

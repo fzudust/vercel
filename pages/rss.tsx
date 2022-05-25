@@ -46,6 +46,13 @@ function Image(props: any) {
   return <img {...props} />
 }
 
+declare global {
+  interface Window {
+    cleanCache: () => void;
+    refreshDB: () => void;
+  }
+}
+
 interface RssItem {
   title: string,
   link: string,
@@ -555,8 +562,8 @@ const RssReader: NextPage = () => {
         }
       });
     }
-    // window.cleanCache = cleanCache
-    // window.refreshDB = refreshDB
+    window.cleanCache = cleanCache;
+    window.refreshDB = refreshDB;
     const load = async () => {
       if ('serviceWorker' in navigator) {
         const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
@@ -584,7 +591,7 @@ const RssReader: NextPage = () => {
   return (
     <>
       <Head>
-        <title>rss</title>
+        <title>rss reader</title>
         <meta charSet="utf-8" />
         <link rel="icon" href="/favicon.ico" />
         <link rel="manifest" href="/manifest.json" />

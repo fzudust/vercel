@@ -66,44 +66,38 @@ const cacheRoute = new Route(({ url }) => {
 }));
 
 registerRoute(cacheRoute); */
+const regexp = /.+(?:\.js|\.css|\.ico|\.html|iframehtml).*/ig;
 // 捕获请求并返回缓存数据
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  const isDirect = request.url.indexOf('/api/proxy') > -1;
+  const shouldBeCache = request.url.match(regexp);
   let isCached = true;
-  const res = caches.match(request, {
-    ignoreSearch: true
-  }).then((response) => {
-    if (!response) {
-      isCached = false;
-      return fetch(request)/* .catch((e) => {
-        return fetch(new Request(request.url, {
-          mode: 'no-cors',
-        }))
-      }); */
-    } else {
-      return response;
-    }
-  })/* .then((response) => {
-    if (response.ok) {
+  let res;
+  if (shouldBeCache) {
+    res = caches.match(request, {
+      ignoreSearch: true
+    }).then((response) => {
+      if (!response) {
+        isCached = false;
+        return fetch(request)
+      } else {
+        return response;
+      }
+    }).then(response => {
+      if (!isCached) {
+        caches.open('cache').then((cache) => {
+          cache.put(request, response);
+        }).catch(e => {
+          console.error('cache error:', e);
+        });
+      }
       return response.clone();
-    } else {
-      return fetch(new Request(request.url, {
-        mode: 'no-cors',
-      }))
-    }
-  }) */.then(response => {
-    if (!isDirect && !isCached) {
-      caches.open('cache').then((cache) => {
-        cache.put(request, response);
-      }).catch(e => {
-        console.error('cache error:', e);
-      });
-    }
-    return response.clone();
-  }).catch((e) => {
-    console.error('service worker fetch error:', e, request);
-    throw e;
-  });
+    }).catch((e) => {
+      console.error('service worker fetch error:', e, request);
+      throw e;
+    });
+  } else {
+    res = fetch(request)
+  }
   event.respondWith(res);
 });

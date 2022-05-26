@@ -437,7 +437,7 @@ function Content(props: ContentProps) {
       {item && <a href={item.link} onClick={e => {
         e.preventDefault();
         const a = e.currentTarget;
-        const url = `/api/proxy?url=${a.href}`;
+        const url = `/api/proxy?url=${a.href}&t=iframehtml`;
         if (iframeRef.current!.src !== location.origin + url) {
           iframeRef.current!.src = url;
         }
@@ -452,7 +452,7 @@ const iframeOnLoad = (e: SyntheticEvent<HTMLIFrameElement, Event>, rss: Rss, ite
   if (!iframeRef.current!.src || (e.target as HTMLIFrameElement).src !== iframeRef.current!.src) return;
   const iframeDocument = iframeRef.current!.contentDocument;
   if (!iframeDocument) return;
-  if (rss && rss.query && iframeRef.current!.src === `${location.origin}/api/proxy?url=${item.link}`) {
+  if (rss && rss.query && iframeRef.current!.src === `${location.origin}/api/proxy?url=${item.link}&t=iframehtml`) {
     const content = contentRef.current;
     const query = iframeDocument.querySelector(rss.query);
     if (query) {
@@ -516,12 +516,11 @@ const RssReader: NextPage = () => {
     changeRss,
     changeItem,
     initRssList,
-    refreshDB,
+    // refreshDB,
   } = useRssList();
 
-  const timerRef = useRef<number>();
   const flag = rss && !rss.loading && item && item.link;
-  const iframeUrl = flag && `/api/proxy?url=${item.link}` || undefined;
+  const iframeUrl = flag && `/api/proxy?url=${item.link}&t=iframehtml` || undefined;
 
   const searchBarProps = {
     rss,
@@ -551,48 +550,13 @@ const RssReader: NextPage = () => {
   };
 
   useEffect(() => {
-    const cleanCache = async () => {
-      const cache = await caches.open('cache');
-      const requetList = await cache.keys();
-      requetList.forEach(async (request) => {
-        /* if (['image', 'video', 'audio'].includes(request.destination)) {
-          cache.delete(request);
-        } */
-        /* const response = await caches.match(request, {
-          ignoreSearch: true
-        })
-        response?.headers.forEach(item => console.log(item)) */
-        const regexp = /.+(?:\.png|\.jpg|\.jpeg|\.webp|\.gif|gravatar|\.mp3|\.mp4|img).*/ig;
-        const { url } = request;
-        if (url.match(regexp)) {
-          cache.delete(request);
-        }
-      });
-    }
-    window.cleanCache = cleanCache;
-    window.refreshDB = refreshDB;
     const load = async () => {
       if ('serviceWorker' in navigator) {
         const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
         console.log(registration);
-        /* const serviceWorker = registration.installing || registration.waiting || registration.active;
-        if (serviceWorker) {
-          console.log(serviceWorker.state);
-          serviceWorker.addEventListener('statechange', function (e: Event) {
-            console.log('serviceWorker状态变化为' + e?.target?.state);
-          });
-        } */
       }
-      timerRef.current = window.setInterval(() => {
-        refreshDB();
-        cleanCache();
-      }, 24 * 60 * 60 * 1000);
     };
-    window.addEventListener('load', load);
-    return () => {
-      window.removeEventListener('load', load);
-      clearInterval(timerRef.current);
-    }
+    load();
   }, []);
 
   return (

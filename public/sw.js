@@ -74,9 +74,7 @@ self.addEventListener('fetch', (event) => {
   let isCached = true;
   let res;
   if (shouldBeCache) {
-    res = caches.match(request, {
-      ignoreSearch: true
-    }).then((response) => {
+    res = caches.match(request).then((response) => {
       if (!response) {
         isCached = false;
         return fetch(request)

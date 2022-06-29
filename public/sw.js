@@ -66,7 +66,7 @@ const cacheRoute = new Route(({ url }) => {
 }));
 
 registerRoute(cacheRoute); */
-const regexp = /.+(?:\.js|\.css|\.ico|\.html|iframehtml).*/ig;
+const regexp = /.+(?:\.js|\.css|\.ico).*/ig;
 // 捕获请求并返回缓存数据
 self.addEventListener('fetch', (event) => {
   const { request } = event;

@@ -1,45 +1,41 @@
-import axios, { AxiosRequestConfig } from 'axios';
-import { NextApiRequest, NextApiResponse } from 'next'
-import https from 'https';
+import type { NextRequest } from 'next/server';
 
-const httpsAgent = new https.Agent({ keepAlive: true })
+export const config = {
+  runtime: 'experimental-edge',
+}
 
-const axiosConfig: AxiosRequestConfig = {
-  responseType: 'document',
-  httpsAgent,
-  headers: {
-    'user-agent': "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36",
-  }
-};
-const instance = axios.create(axiosConfig);
-
-async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const url: string = req.query.url as string;
-  const start = Date.now();
+async function handler(req: NextRequest) {
+  const { searchParams, origin } = new URL(req.url)
+  const url: string = searchParams.get('url') || '';
   try {
-    const result = await instance.get<string>(url);
-    const origin = new URL(url).origin;
-    for (const key in result.headers) {
-      if (
-        !['transfer-encoding', 'x-frame-options'].includes(key.toLowerCase())
-      ) {
-        res.setHeader(key, result.headers[key]);
-      }
-    }
-    const data: string = result.data
-      .replace(/<script/gi, '<noscript')
+    const startTime = Date.now();
+    const result = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36'
+      },
+    });
+    const text: string = await result.text();
+    const data = text.replace(/<script/gi, '<noscript')
       .replace(/<script/gi, '<noscript')
       .replace(/<\/script>/gi, '</noscript>')
       .replace(/<head>/gi, `<head><base href="${origin}" />`)
       .replace(/<\/head>/gi, `<link href="https://vercel-fzudust.vercel.app/iframe.css" rel="stylesheet"></head>`);
-    const ms = Date.now() - start;
-    res.setHeader('Server-Timing', `net;dur=${ms}`);
-    res.setHeader('Access-Control-Allow-Origin', `*`);
-    // res.status(200);
-    res.send(data);
+    const headers = result.headers;
+    headers.delete('content-encoding');
+    // headers.delete('transfer-encoding');
+    headers.delete('x-frame-options');
+    const ms = Date.now() - startTime;
+    headers.append('Server-Timing', `fetch;dur=${ms}`);
+    const response = new Response(data, {
+      headers: result.headers,
+      status: 200,
+      statusText: 'success',
+    });
+    return response;
   } catch (error) {
     console.error(error)
-    res.send(error);
+    return new Response(JSON.stringify(error));
   }
 }
 

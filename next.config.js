@@ -7,6 +7,6 @@ module.exports = {
     includePaths: [path.join(__dirname, 'styles')],
   },
   experimental: {
-    outputStandalone: true
+    runtime: 'experimental-edge',
   },
 }

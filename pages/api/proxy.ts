@@ -4,9 +4,18 @@ export const config = {
   runtime: 'experimental-edge',
 }
 
+const noResHeaders = [
+  'transfer-encoding',
+  'content-encoding',
+  'x-frame-options',
+];
+
 async function handler(req: NextRequest) {
   const { searchParams, origin } = new URL(req.url)
   const url: string = searchParams.get('url') || '';
+  if (!url) {
+    return new Response('null');
+  }
   try {
     const startTime = Date.now();
     const result = await fetch(url, {
@@ -21,14 +30,16 @@ async function handler(req: NextRequest) {
       .replace(/<\/script>/gi, '</noscript>')
       .replace(/<head>/gi, `<head><base href="${origin}" />`)
       .replace(/<\/head>/gi, `<link href="https://vercel-fzudust.vercel.app/iframe.css" rel="stylesheet"></head>`);
-    const headers = result.headers;
-    headers.delete('content-encoding');
-    // headers.delete('transfer-encoding');
-    headers.delete('x-frame-options');
+    const headers = new Headers();
+    result.headers.forEach((value, key) => {
+      if (!noResHeaders.includes(key.toLowerCase())) {
+        headers.append(key, value);
+      }
+    })
     const ms = Date.now() - startTime;
     headers.append('Server-Timing', `fetch;dur=${ms}`);
     const response = new Response(data, {
-      headers: result.headers,
+      headers,
       status: 200,
       statusText: 'success',
     });

@@ -11,11 +11,12 @@ const noResHeaders = [
 ];
 
 async function handler(req: NextRequest) {
-  const { searchParams, origin } = new URL(req.url)
+  const { searchParams } = new URL(req.url)
   const url: string = searchParams.get('url') || '';
   if (!url) {
     return new Response('null');
   }
+  const { origin } = new URL(url)
   try {
     const startTime = Date.now();
     const result = await fetch(url, {

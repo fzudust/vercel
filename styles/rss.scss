@@ -2,6 +2,7 @@
   display: flex;
   background-color: #fff;
   border-radius: 8px;
+  max-width: 1320px;
 
   .selected {
     background-color: #87e8de;
@@ -98,17 +99,10 @@
 }
 
 #page {
-  width: 100vw;
-  height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 1;
-  visibility: hidden;
-  overflow: hidden;
+
 
   >iframe {
-    width: 100vw;
+    width: 100%;
     height: 100vh;
   }
 
@@ -124,10 +118,29 @@
   }
 }
 
+.page-show {
+  height: 100%;
+  position: fixed;
+  top: 0;
+  right: 0;
+}
+
+.page-hide {
+  width: 100vw;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  visibility: hidden;
+  overflow: hidden;
+}
+
 .rss-search {
   /* position: relative;
 	top: -10px; */
   padding: 10px;
+  max-width: 1320px;
 
   >* {
     margin-left: 14px;

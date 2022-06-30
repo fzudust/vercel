@@ -39,6 +39,7 @@ const iframeRef = React.createRef<HTMLIFrameElement>();
 const rssListRef = React.createRef<HTMLElement>();
 const rssRef = React.createRef<HTMLElement>();
 const contentRef = React.createRef<HTMLDivElement>();
+const searchRef = React.createRef<HTMLDivElement>();
 
 
 function Image(props: any) {
@@ -109,12 +110,14 @@ interface ItemListProps {
 
 interface ContentProps {
   item: RssItem
+  pageWidth: number
 }
 
 interface PageIframeProps {
   iframeUrl: string | undefined,
   item: RssItem,
   rss: Rss,
+  pageWidth: number,
 }
 
 function useRssList(): UseRssRes {
@@ -293,7 +296,7 @@ function SearchBar(props: SearchBarProps) {
   }, [rss])
 
   return (
-    <div className="rss-search">
+    <div className="rss-search" ref={searchRef}>
       <Input
         style={{ width: '40%' }}
         addonBefore="地址:"
@@ -410,8 +413,10 @@ function ItemList(props: ItemListProps) {
 
 function Content(props: ContentProps) {
   const {
-    item
+    item,
+    pageWidth,
   } = props;
+  const isShow = pageWidth > 800;
   const ifr = `<iframe
 				title='展示内容'
 				name='contentIframe'
@@ -436,6 +441,7 @@ function Content(props: ContentProps) {
     <main>
       {item && <a href={item.link} onClick={e => {
         e.preventDefault();
+        if (isShow) return;
         const a = e.currentTarget;
         const url = `/api/proxy?url=${a.href}&t=iframehtml`;
         if (iframeRef.current!.src !== location.origin + url) {
@@ -476,16 +482,20 @@ function PageIframe(props: PageIframeProps) {
   const {
     iframeUrl,
     item,
-    rss
+    rss,
+    pageWidth,
   } = props;
+  const isShow = pageWidth > 800;
   const children = (
     <div
       id='page'
       ref={pageRef}
+      className={isShow ? 'page-show' : 'page-hide'}
+      style={isShow ? { width: pageWidth } : undefined}
     >
-      <RollbackOutlined onClick={() => {
+      {!isShow && <RollbackOutlined onClick={() => {
         pageRef.current!.style.visibility = 'hidden';
-      }} />
+      }} />}
       <iframe
         title='展示网页'
         name="pageIframe"
@@ -521,6 +531,7 @@ const RssReader: NextPage = () => {
 
   const flag = rss && !rss.loading && item && item.link;
   const iframeUrl = flag && `/api/proxy?url=${item.link}&t=iframehtml` || undefined;
+  const [pageWidth, setPageWidth] = useState(0);
 
   const searchBarProps = {
     rss,
@@ -542,11 +553,13 @@ const RssReader: NextPage = () => {
   };
   const contentProps = {
     item,
+    pageWidth,
   };
   const pageIframeProps = {
     iframeUrl,
     rss,
     item,
+    pageWidth,
   };
 
   useEffect(() => {
@@ -558,6 +571,23 @@ const RssReader: NextPage = () => {
     };
     load();
   }, []);
+
+  useEffect(() => {
+    if (!searchRef.current) {
+      return;
+    }
+    const resizeObserver = new ResizeObserver((entries) => {
+      entries.forEach((entry) => {
+        const { clientWidth } = entry.target;
+        setPageWidth(clientWidth - searchRef.current!.clientWidth);
+        console.log('body width:', clientWidth)
+      });
+    });
+    resizeObserver.observe(document.body);
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [searchRef.current]);
 
   return (
     <>

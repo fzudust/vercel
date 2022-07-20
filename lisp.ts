@@ -23,3 +23,7 @@ export type Multiply<M extends number, N extends number> = _Multiply<M, N, []>
 type _DivideBy<M extends number, N extends number, res extends unknown[]> =
   M extends 0 ? res["length"] : _Subtract<M, N> extends -1 ? unknown : _DivideBy<_Subtract<M, N>, N, [unknown, ...res]>
 export type DividedBy<M extends number, N extends number> = N extends 0 ? unknown : _DivideBy<M, N, []>;
+
+type ParamType<T> = T extends (arg: infer P) => any ? P : T;
+
+type ReturnType<T> = T extends (...args: any[]) => infer P ? P : any;

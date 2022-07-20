@@ -34,12 +34,13 @@ import {
 import IndexedDB from "../components/indexdb"
 
 const timeFormat = 'YYYY-MM-DD HH:mm:ss';
-const pageRef = React.createRef<HTMLDivElement>();
-const iframeRef = React.createRef<HTMLIFrameElement>();
-const rssListRef = React.createRef<HTMLElement>();
-const rssRef = React.createRef<HTMLElement>();
-const contentRef = React.createRef<HTMLDivElement>();
-const searchRef = React.createRef<HTMLDivElement>();
+const pageRef = createRef<HTMLDivElement>();
+const iframeRef = createRef<HTMLIFrameElement>();
+const rssListRef = createRef<HTMLElement>();
+const rssRef = createRef<HTMLElement>();
+const contentRef = createRef<HTMLDivElement>();
+const searchRef = createRef<HTMLDivElement>();
+const fileHandleRef = createRef<HTMLDivElement>();
 
 
 function Image(props: any) {
@@ -118,6 +119,21 @@ interface PageIframeProps {
   item: RssItem,
   rss: Rss,
   pageWidth: number,
+}
+
+const writeFile = async (list: Rss[]) => {
+  if (!fileHandleRef.current) return;
+  console.log(fileHandleRef);
+  try {
+    const writableStream = await fileHandleRef.current.createWritable();
+    const blob = new Blob([JSON.stringify(list)], {
+      type: 'application/json'
+    });
+    await writableStream.write(blob);
+    await writableStream.close();
+  } catch (error) {
+    console.error('写入失败', error);
+  }
 }
 
 function useRssList(): UseRssRes {
@@ -244,6 +260,7 @@ function useRssList(): UseRssRes {
   }, []);
   useEffect(() => {
     updateRss()
+    writeFile(rssList);
   }, [rssIndex]);
   return {
     rssList,
@@ -293,7 +310,7 @@ function SearchBar(props: SearchBarProps) {
   useEffect(() => {
     setUrl(rss.url)
     setQuery(rss.query as string)
-  }, [rss])
+  }, [rss]);
 
   return (
     <div className="rss-search" ref={searchRef}>
@@ -327,7 +344,15 @@ function SearchBar(props: SearchBarProps) {
         aRef.current!.href = URL.createObjectURL(blob);
         aRef.current?.click();
       }}>导出</Button>
-      {/* <Button icon={<RetweetOutlined />} onClick={filterRssList}>过滤</Button> */}
+      <Button onClick={async () => {
+        fileHandleRef.current = await window.showSaveFilePicker({
+          suggestedName: 'export-file.json',
+          types: [{
+            description: 'json',
+            accept: { 'application/json': ['.json'] },
+          }],
+        });
+      }}>文件</Button>
       <a ref={aRef} download='export.json' />
       <input
         type='file'

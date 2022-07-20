@@ -40,7 +40,7 @@ const rssListRef = createRef<HTMLElement>();
 const rssRef = createRef<HTMLElement>();
 const contentRef = createRef<HTMLDivElement>();
 const searchRef = createRef<HTMLDivElement>();
-const fileHandleRef = createRef<HTMLDivElement>();
+const fileHandleRef = createRef<FileSystemFileHandle>();
 
 
 function Image(props: any) {
@@ -50,10 +50,12 @@ function Image(props: any) {
 
 declare global {
   interface Window {
-    cleanCache: () => void;
-    refreshDB: () => void;
+    // cleanCache: () => void;
+    // refreshDB: () => void;
+    showSaveFilePicker: (option?: {}) => FileSystemFileHandle;
   }
 }
+
 
 interface RssItem {
   title: string,
@@ -125,6 +127,7 @@ const writeFile = async (list: Rss[]) => {
   if (!fileHandleRef.current) return;
   console.log(fileHandleRef);
   try {
+    // @ts-ignore：类型“FileSystemFileHandle”上不存在属性“createWritable”。
     const writableStream = await fileHandleRef.current.createWritable();
     const blob = new Blob([JSON.stringify(list)], {
       type: 'application/json'
@@ -345,6 +348,7 @@ function SearchBar(props: SearchBarProps) {
         aRef.current?.click();
       }}>导出</Button>
       <Button onClick={async () => {
+      // @ts-ignore：无法分配到 "current" ，因为它是只读属性。
         fileHandleRef.current = await window.showSaveFilePicker({
           suggestedName: 'export-file.json',
           types: [{

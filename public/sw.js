@@ -66,36 +66,76 @@ const cacheRoute = new Route(({ url }) => {
 }));
 
 registerRoute(cacheRoute); */
+class Semaphore {
+  constructor(available) {
+    // available 为最大的并发数量
+    this.available = available;
+    this.waiters = [];
+    // this._continue = this._continue.bind(this);
+  }
+
+  acquire(callback) {
+    if (this.available > 0) {
+      this.available--;
+      callback();
+    } else {
+      this.waiters.push(callback);
+    }
+  }
+
+  release() {
+    this.available++;
+    if (this.waiters.length > 0) {
+      requestAnimationFrame(this._continue);
+    }
+  }
+
+  _continue = () => {
+    if (this.available > 0) {
+      if (this.waiters.length > 0) {
+        this.available--;
+        const callback = this.waiters.shift();
+        callback();
+      }
+    }
+  }
+}
+
+const semaphore = new Semaphore(300);
 const regexp = /.+(?:\.js|\.css|\.ico).*/ig;
 // 捕获请求并返回缓存数据
 self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  const shouldBeCache = request.url.match(regexp);
-  let isCached = true;
-  let res;
-  if (shouldBeCache) {
-    res = caches.match(request).then((response) => {
-      if (!response) {
-        isCached = false;
-        return fetch(request)
-      } else {
-        return response;
-      }
-    }).then(response => {
-      if (!isCached) {
-        caches.open('cache').then((cache) => {
-          cache.put(request, response);
-        }).catch(e => {
-          console.error('cache error:', e);
-        });
-      }
-      return response.clone();
-    }).catch((e) => {
-      console.error('service worker fetch error:', e, request);
-      throw e;
-    });
-  } else {
-    res = fetch(request)
-  }
-  event.respondWith(res);
+  semaphore.acquire(() => {
+    const { request } = event;
+    const shouldBeCache = request.url.match(regexp);
+    let isCached = true;
+    let res;
+    if (shouldBeCache) {
+      res = caches.match(request).then((response) => {
+        if (!response) {
+          isCached = false;
+          return fetch(request)
+        } else {
+          return response;
+        }
+      }).then(response => {
+        if (!isCached) {
+          caches.open('cache').then((cache) => {
+            cache.put(request, response);
+          }).catch(e => {
+            console.error('cache error:', e);
+          });
+        }
+        return response.clone();
+      }).catch((e) => {
+        console.error('service worker fetch error:', e, request);
+        throw e;
+      });
+    } else {
+      res = fetch(request)
+    }
+    event.respondWith(res);
+    semaphore.release();
+  })
+
 });

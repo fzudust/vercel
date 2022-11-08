@@ -10,9 +10,9 @@
   },
   "dependencies": {
     "antd": "^4.21.4",
-    "axios": "^0.27.2",
+    "axios": "latest",
     "dayjs": "^1.11.3",
-    "next": "^12.2.0",
+    "next": "latest",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "sass": "^1.53.0"
@@ -22,7 +22,7 @@
     "@types/react": "18.0.14",
     "@types/react-dom": "^18.0.5",
     "eslint": "8.18.0",
-    "eslint-config-next": "12.2.0",
+    "eslint-config-next": "latest",
     "typescript": "4.7.4"
   }
 }

@@ -66,7 +66,7 @@ const Home: NextPage = () => {
           </span>
         </a>
         <Link href="/rss">
-          <a>RSS</a>
+          RSS
         </Link>
       </footer>
     </div>

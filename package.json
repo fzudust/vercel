@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "antd": "^4.21.4",
+    "@ant-design/icons": "^4.7.0",
     "axios": "latest",
     "dayjs": "^1.11.3",
     "next": "latest",

@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 
 export const config = {
-  runtime: 'experimental-edge',
+  runtime: 'edge',
 }
 
 const noResHeaders = [
@@ -47,7 +47,10 @@ async function handler(req: NextRequest) {
     return response;
   } catch (error) {
     console.error(error)
-    return new Response(JSON.stringify(error));
+    return new Response(JSON.stringify(error), {
+      status: 500,
+      statusText: 'error',
+    });
   }
 }
 

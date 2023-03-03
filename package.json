@@ -9,10 +9,11 @@
     "prisma": "prisma"
   },
   "dependencies": {
-    "antd": "^4.21.4",
     "@ant-design/icons": "^4.7.0",
+    "antd": "^4.21.4",
     "axios": "latest",
     "dayjs": "^1.11.3",
+    "eventsource-parser": "^0.1.0",
     "next": "latest",
     "react": "18.2.0",
     "react-dom": "18.2.0",

@@ -7,7 +7,7 @@ export const config = {
 };
 
 const apiKey = process.env.OPENAI_API_KEY;
-const url = 'https://api.openai.com/v1/chat/completions';
+const url = 'https://lnkcast.com/v1/chat/completions';
 
 
 async function handler(req: NextRequest) {

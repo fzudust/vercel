@@ -13,9 +13,9 @@ export default function Home() {
 
   async function onSubmit(event) {
     event.preventDefault();
-    if (loadingRef.current) return;
+    if (loadingRef.current || !input) return;
     loadingRef.current = true;
-    messagesRef.current = [...messagesRef.current, { role: 'user', content: input }]
+    messagesRef.current = [...messagesRef.current, { role: 'user', content: input, id: Date.now() }]
     setMessages(messagesRef.current);
     setInput('')
     try {
@@ -24,7 +24,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ messages: messagesRef.current }),
+        body: JSON.stringify({ messages: messagesRef.current.map(item => ({ role: item.role, content: item.content })) }),
       });
 
       if (!response.ok) {
@@ -49,7 +49,7 @@ export default function Home() {
         }
         done = readerDone
       }
-      messagesRef.current = [...messagesRef.current, { role: 'assistant', content: currentResRef.current }];
+      messagesRef.current = [...messagesRef.current, { role: 'assistant', content: currentResRef.current, id: Date.now() }];
       setMessages(messagesRef.current);
       setCurrentRes('');
       currentResRef.current = '';
@@ -73,11 +73,11 @@ export default function Home() {
       <div className={styles.content}>
         <ul className={styles.msg}>
           {messages.map(item => (
-            <li key={item.content} className={item.role === 'assistant' ? styles.completion : styles.prompt}>
+            <li key={item.id} className={item.role === 'assistant' ? styles.completion : styles.prompt}>
               <div className={styles.inner}>
                 {/* eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text */}
                 <img width="30" src={item.role === 'assistant' ? 'https://www.chat2ai.cn/images/ai-avatar.jpg' : 'https://www.chat2ai.cn/images/user-avatar.jpg'} />
-                <span class="msg-detail">{item.content}</span>
+                <span className={styles.msgdetail}>{item.content}</span>
               </div>
             </li>
           ))}
@@ -86,7 +86,7 @@ export default function Home() {
               <div className={styles.inner}>
                 {/* eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text */}
                 <img width="30" src="https://www.chat2ai.cn/images/ai-avatar.jpg" />
-                <span class="msg-detail">{currentRes}</span>
+                <span className={styles.msgdetail}>{currentRes}</span>
               </div>
             </li>
           )}

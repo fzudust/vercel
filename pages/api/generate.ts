@@ -7,7 +7,7 @@ export const config = {
 };
 
 const apiKey = process.env.OPENAI_API_KEY;
-const url = 'https://lnkcast.com/v1/chat/completions';
+const url = process.env.OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions';
 
 
 async function handler(req: NextRequest) {
@@ -32,7 +32,8 @@ async function handler(req: NextRequest) {
       body: JSON.stringify({
         model: 'gpt-3.5-turbo',
         messages,
-        temperature: 0.6,
+        // temperature: 0.6,
+        top_p: 0.6,
         stream: true,
       }),
     });

@@ -42,7 +42,7 @@ export default function Home() {
         const { value, done: readerDone } = await reader.read();
         if (value) {
           let char = decoder.decode(value);
-          char = char.replace(/\n/ig, '')
+          char = char.replace(/\n/ig, ' ')
           if (!char) continue
           currentResRef.current = currentResRef.current + char;
           setCurrentRes(currentResRef.current)
@@ -68,6 +68,7 @@ export default function Home() {
     <>
       <Head>
         <title>ChatGPT</title>
+        <link rel="icon" href="/favicon.svg" />
       </Head>
 
       <div className={styles.content}>
@@ -76,7 +77,7 @@ export default function Home() {
             <li key={item.id} className={item.role === 'assistant' ? styles.completion : styles.prompt}>
               <div className={styles.inner}>
                 {/* eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text */}
-                <img width="30" src={item.role === 'assistant' ? 'https://www.chat2ai.cn/images/ai-avatar.jpg' : 'https://www.chat2ai.cn/images/user-avatar.jpg'} />
+                <img width="30" src={item.role === 'assistant' ? '/ai-avatar.jpg' : '/user-avatar.jpg'} />
                 <span className={styles.msgdetail}>{item.content}</span>
               </div>
             </li>
@@ -85,7 +86,7 @@ export default function Home() {
             <li className={styles.completion}>
               <div className={styles.inner}>
                 {/* eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text */}
-                <img width="30" src="https://www.chat2ai.cn/images/ai-avatar.jpg" />
+                <img width="30" src="/ai-avatar.jpg" />
                 <span className={styles.msgdetail}>{currentRes}</span>
               </div>
             </li>

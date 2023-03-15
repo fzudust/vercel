@@ -348,7 +348,7 @@ function SearchBar(props: SearchBarProps) {
         aRef.current?.click();
       }}>导出</Button>
       <Button onClick={async () => {
-      // @ts-ignore：无法分配到 "current" ，因为它是只读属性。
+        // @ts-ignore：无法分配到 "current" ，因为它是只读属性。
         fileHandleRef.current = await window.showSaveFilePicker({
           suggestedName: 'export-file.json',
           types: [{
@@ -619,7 +619,7 @@ const RssReader: NextPage = () => {
   }, [searchRef.current]);
 
   return (
-    <>
+    <div id="rss-reader">
       <Head>
         <title>rss reader</title>
         <meta charSet="utf-8" />
@@ -634,7 +634,7 @@ const RssReader: NextPage = () => {
         <Content {...contentProps} />
       </div>
       {iframeUrl && <PageIframe {...pageIframeProps} />}
-    </>
+    </div>
   );
 }
 

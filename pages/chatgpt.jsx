@@ -1,5 +1,6 @@
 import Head from "next/head";
 import { useState, useRef } from "react";
+import Markdown from '../components/markdown';
 import styles from "../styles/chatgpt.module.css";
 
 export default function Home() {
@@ -42,7 +43,6 @@ export default function Home() {
         const { value, done: readerDone } = await reader.read();
         if (value) {
           let char = decoder.decode(value);
-          char = char.replace(/\n/ig, ' ')
           if (!char) continue
           currentResRef.current = currentResRef.current + char;
           setCurrentRes(currentResRef.current)
@@ -78,7 +78,8 @@ export default function Home() {
               <div className={styles.inner}>
                 {/* eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text */}
                 <img width="30" src={item.role === 'assistant' ? '/ai-avatar.jpg' : '/user-avatar.jpg'} />
-                <span className={styles.msgdetail}>{item.content}</span>
+                {item.role === 'assistant' ? <Markdown source={item.content} /> : <span className={styles.msgdetail}>{item.content}</span>}
+                {/* <span className={styles.msgdetail}>{item.content}</span> */}
               </div>
             </li>
           ))}

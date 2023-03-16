@@ -1,7 +1,11 @@
 import Head from "next/head";
 import { useState, useRef } from "react";
+import { Button, Input, message } from 'antd';
+import { SendOutlined, ClearOutlined } from '@ant-design/icons';
 import Markdown from '../components/markdown';
 import styles from "../styles/chatgpt.module.css";
+
+const { TextArea } = Input;
 
 export default function Home() {
   const [input, setInput] = useState();
@@ -10,12 +14,12 @@ export default function Home() {
 
   const messagesRef = useRef([]);
   const currentResRef = useRef('');
-  const loadingRef = useRef(false);
+  const [loading, setLoading] = useState(false);
 
   async function onSubmit(event) {
     event.preventDefault();
-    if (loadingRef.current || !input) return;
-    loadingRef.current = true;
+    if (loading || !input) return;
+    setLoading(true);
     messagesRef.current = [...messagesRef.current, { role: 'user', content: input, id: Date.now() }]
     setMessages(messagesRef.current);
     setInput('')
@@ -55,8 +59,9 @@ export default function Home() {
       currentResRef.current = '';
     } catch (error) {
       console.error(error);
+      message.error(error);
     }
-    loadingRef.current = false;
+    setLoading(false);
   }
 
   const clear = () => {
@@ -72,6 +77,7 @@ export default function Home() {
       </Head>
 
       <div className={styles.content}>
+        <h3 style={{ textAlign: 'center' }}>ChatGPT</h3>
         <ul className={styles.msg}>
           {messages.map(item => (
             <li key={item.id} className={item.role === 'assistant' ? styles.completion : styles.prompt}>
@@ -95,20 +101,19 @@ export default function Home() {
         </ul>
         <div className={styles.input}>
           <div className={styles.inner}>
+            <TextArea
+              rows={4}
+              showCount
+              name="提问"
+              placeholder="问ChatGPT"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onPressEnter={onSubmit}
+              disabled={loading}
+            />
             <div>
-              <button className={styles.btnresponse} onClick={clear}>清理</button>
-            </div>
-            <div className={styles.relative}>
-              <form onSubmit={onSubmit}>
-                <input
-                  type="text"
-                  name="提问"
-                  placeholder="问ChatGPT"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                />
-                <div className={styles.send} onClick={onSubmit} ></div>
-              </form>
+              <Button loading={loading} type="primary" icon={<SendOutlined />} onClick={onSubmit} style={{ margin: '10px' }}>发送</Button>
+              <Button icon={<ClearOutlined />} onClick={clear} style={{ margin: '10px' }}>清理</Button>
             </div>
           </div>
         </div>

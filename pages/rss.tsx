@@ -55,6 +55,11 @@ declare global {
     // cleanCache: () => void;
     // refreshDB: () => void;
     showSaveFilePicker: (option?: {}) => FileSystemFileHandle;
+    turnstilecallback: () => void
+    turnstile: {
+      render: (id: string, config: {}) => string
+      remove: (widgetId: string) => void
+    }
   }
 }
 
@@ -623,11 +628,11 @@ const RssReader: NextPage = () => {
   useEffect(() => {
     loadjs('https://challenges.cloudflare.com/turnstile/v0/api.js?onload=turnstilecallback');
     window.turnstilecallback = () => {
-      const widgetId = turnstile.render('#turnstile-contain', {
+      const widgetId = window.turnstile.render('#turnstile-contain', {
         sitekey: '0x4AAAAAAALWkiOayCAO7XtG',
         theme: 'light',
-        callback(token) {
-          axios.post('/api/turnstile', { token }).then(() => turnstile.remove(widgetId))
+        callback(token: string) {
+          axios.post('/api/turnstile', { token }).then(() => window.turnstile.remove(widgetId))
         }
       });
     }

@@ -32,6 +32,8 @@ import {
   getIcon,
 } from '../components/rss-helper';
 import IndexedDB from "../components/indexdb"
+import loadjs from "../components/loadjs"
+import axios from 'axios';
 
 const timeFormat = 'YYYY-MM-DD HH:mm:ss';
 const pageRef = createRef<HTMLDivElement>();
@@ -618,6 +620,19 @@ const RssReader: NextPage = () => {
     };
   }, [searchRef.current]);
 
+  useEffect(() => {
+    loadjs('https://challenges.cloudflare.com/turnstile/v0/api.js?onload=turnstilecallback');
+    window.turnstilecallback = () => {
+      const widgetId = turnstile.render('#turnstile-contain', {
+        sitekey: '0x4AAAAAAALWkiOayCAO7XtG',
+        theme: 'light',
+        callback(token) {
+          axios.post('/api/turnstile', { token }).then(() => turnstile.remove(widgetId))
+        }
+      });
+    }
+  }, [])
+
   return (
     <div id="rss-reader">
       <Head>
@@ -627,6 +642,7 @@ const RssReader: NextPage = () => {
         <link rel="manifest" href="/manifest.json" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
       </Head>
+      <div id="turnstile-contain"></div>
       <SearchBar {...searchBarProps} />
       <div className='rss-content' >
         <RssList {...rssListProps} />

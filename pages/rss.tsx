@@ -59,6 +59,7 @@ declare global {
     turnstile: {
       render: (id: string, config: {}) => string
       remove: (widgetId: string) => void
+      reset: (widgetId: string) => void
     }
   }
 }
@@ -568,6 +569,7 @@ const RssReader: NextPage = () => {
   const flag = rss && !rss.loading && item && item.link;
   const iframeUrl = flag && `/api/proxy?url=${item.link}&t=iframehtml` || undefined;
   const [pageWidth, setPageWidth] = useState(0);
+  const [isValid, setIsValid] = useState(false);
 
   const searchBarProps = {
     rss,
@@ -632,7 +634,12 @@ const RssReader: NextPage = () => {
         sitekey: '0x4AAAAAAALWkiOayCAO7XtG',
         theme: 'light',
         callback(token: string) {
-          axios.post('/api/turnstile', { token }).then(() => window.turnstile.remove(widgetId))
+          axios.post('/api/turnstile', { token }).then(() => {
+            window.turnstile.remove(widgetId);
+            setIsValid(true);
+          }).catch(()=>{
+            window.turnstile.reset(widgetId);
+          })
         }
       });
     }
@@ -647,14 +654,19 @@ const RssReader: NextPage = () => {
         <link rel="manifest" href="/manifest.json" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
       </Head>
-      <div id="turnstile-contain"></div>
-      <SearchBar {...searchBarProps} />
-      <div className='rss-content' >
-        <RssList {...rssListProps} />
-        <ItemList {...itemListProps} />
-        <Content {...contentProps} />
-      </div>
-      {iframeUrl && <PageIframe {...pageIframeProps} />}
+      {isValid ? (
+        <>
+          <SearchBar {...searchBarProps} />
+          <div className='rss-content' >
+            <RssList {...rssListProps} />
+            <ItemList {...itemListProps} />
+            <Content {...contentProps} />
+          </div>
+          {iframeUrl && <PageIframe {...pageIframeProps} />}
+        </>
+      ) : (
+        <div id="turnstile-contain"></div>
+      )}
     </div>
   );
 }

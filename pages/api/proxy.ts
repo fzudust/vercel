@@ -2,7 +2,10 @@ import axios, { AxiosRequestConfig } from 'axios';
 import { NextApiRequest, NextApiResponse } from 'next'
 import https from 'https';
 
-const httpsAgent = new https.Agent({ keepAlive: true })
+const httpsAgent = new https.Agent({
+  keepAlive: true,
+  rejectUnauthorized: false,
+})
 
 const axiosConfig: AxiosRequestConfig = {
   responseType: 'document',

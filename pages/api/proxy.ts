@@ -1,56 +1,45 @@
-import type { NextRequest } from 'next/server';
+import axios, { AxiosRequestConfig } from 'axios';
+import { NextApiRequest, NextApiResponse } from 'next'
+import https from 'https';
 
-export const config = {
-  runtime: 'edge',
-}
+const httpsAgent = new https.Agent({ keepAlive: true })
 
-const noResHeaders = [
-  'transfer-encoding',
-  'content-encoding',
-  'x-frame-options',
-];
-
-async function handler(req: NextRequest) {
-  const { searchParams } = new URL(req.url)
-  const url: string = searchParams.get('url') || '';
-  if (!url) {
-    return new Response('null');
+const axiosConfig: AxiosRequestConfig = {
+  responseType: 'document',
+  httpsAgent,
+  headers: {
+    'user-agent': "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36",
   }
-  const { origin } = new URL(url)
+};
+const instance = axios.create(axiosConfig);
+
+async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const url: string = req.query.url as string;
+  const start = Date.now();
   try {
-    const startTime = Date.now();
-    const result = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36'
-      },
-    });
-    const text: string = await result.text();
-    const data = text.replace(/<script/gi, '<noscript')
+    const result = await instance.get<string>(url);
+    const origin = new URL(url).origin;
+    for (const key in result.headers) {
+      if (
+        !['transfer-encoding', 'x-frame-options'].includes(key.toLowerCase())
+      ) {
+        res.setHeader(key, result.headers[key]);
+      }
+    }
+    const data: string = result.data
+      .replace(/<script/gi, '<noscript')
       .replace(/<script/gi, '<noscript')
       .replace(/<\/script>/gi, '</noscript>')
       .replace(/<head>/gi, `<head><base href="${origin}" />`)
       .replace(/<\/head>/gi, `<link href="https://vercel-fzudust.vercel.app/iframe.css" rel="stylesheet"></head>`);
-    const headers = new Headers();
-    result.headers.forEach((value, key) => {
-      if (!noResHeaders.includes(key.toLowerCase())) {
-        headers.append(key, value);
-      }
-    })
-    const ms = Date.now() - startTime;
-    headers.append('Server-Timing', `fetch;dur=${ms}`);
-    const response = new Response(data, {
-      headers,
-      status: 200,
-      statusText: 'success',
-    });
-    return response;
+    const ms = Date.now() - start;
+    res.setHeader('Server-Timing', `net;dur=${ms}`);
+    res.setHeader('Access-Control-Allow-Origin', `*`);
+    // res.status(200);
+    res.send(data);
   } catch (error) {
     console.error(error)
-    return new Response(JSON.stringify(error), {
-      status: 500,
-      statusText: 'error',
-    });
+    res.send(error);
   }
 }
 

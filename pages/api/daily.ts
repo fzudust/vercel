@@ -14,11 +14,11 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
   return btoa(binary);
 }
 
-const formatData = async (json: { data: { datetime: any; imageurl: any; }; }) => {
+const formatData = async (data: { datetime: any; imageurl: any; }) => {
   const {
     datetime,
     imageurl,
-  } = json.data;
+  } = data;
   const result = await fetch(imageurl, {
     method: 'GET',
     headers: {
@@ -29,24 +29,27 @@ const formatData = async (json: { data: { datetime: any; imageurl: any; }; }) =>
   const base64 = arrayBufferToBase64(buffer);
   return {
     datetime,
-    imageurl,
+    // imageurl,
     base64,
   }
 }
 
-const url = 'https://api.03c3.cn/api/zb?type=jsonImg';
+const url = 'https://api.03c3.cn/api/zb';
 
 async function handler(req: NextRequest) {
   try {
     const startTime = Date.now();
-    const result = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36'
-      },
+    /*  const result = await fetch(url, {
+       method: 'GET',
+       headers: {
+         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36'
+       },
+     });
+     const json = await result.json(); */
+    const data = await formatData({
+      datetime: (new Date()).toISOString().split('T')[0],
+      imageurl: url,
     });
-    const json = await result.json();
-    const data = await formatData(json);
     const headers = new Headers();
     const ms = Date.now() - startTime;
     headers.append('Server-Timing', `fetch;dur=${ms}`);

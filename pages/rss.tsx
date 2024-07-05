@@ -627,7 +627,7 @@ const RssReader: NextPage = () => {
     };
   }, [searchRef.current]);
 
-  useEffect(() => {
+  /* useEffect(() => {
     loadjs('https://challenges.cloudflare.com/turnstile/v0/api.js?onload=turnstilecallback');
     window.turnstilecallback = () => {
       const widgetId = window.turnstile.render('#turnstile-contain', {
@@ -643,7 +643,7 @@ const RssReader: NextPage = () => {
         }
       });
     }
-  }, [])
+  }, []) */
 
   return (
     <div id="rss-reader">
@@ -654,19 +654,13 @@ const RssReader: NextPage = () => {
         <link rel="manifest" href="/manifest.json" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
       </Head>
-      {isValid ? (
-        <>
-          <SearchBar {...searchBarProps} />
-          <div className='rss-content' >
-            <RssList {...rssListProps} />
-            <ItemList {...itemListProps} />
-            <Content {...contentProps} />
-          </div>
-          {iframeUrl && <PageIframe {...pageIframeProps} />}
-        </>
-      ) : (
-        <div id="turnstile-contain"></div>
-      )}
+      <SearchBar {...searchBarProps} />
+      <div className='rss-content' >
+        <RssList {...rssListProps} />
+        <ItemList {...itemListProps} />
+        <Content {...contentProps} />
+      </div>
+      {iframeUrl && <PageIframe {...pageIframeProps} />}
     </div>
   );
 }

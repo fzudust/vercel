@@ -146,13 +146,36 @@ function getItemsFromFeed(docList) {
     }
   }).filter(item => !!item.id)
 }
+const formatReadhubItems = (res) => {
+
+  return res?.data?.data?.items.map(item=>({
+    title: item.title,
+    link: item.url,
+    description: item.summary,
+    id: item.uid,
+    updateTime: item.publishDate,
+  })) ?? [];
+}
 const getRss = async (url) => {
   if (url === '') {
     alert('请输入地址');
     return;
   }
   try {
-    const res = await axios.get('/api/proxy?url=' + url);
+    const res = await axios.get('/api/proxy?url=' + encodeURIComponent(url));
+    if (res.headers.get("Content-Type").includes('json')) {
+      const items = formatReadhubItems(res);
+      const rss = {
+        updateTime: Date.now(),
+        url,
+        title: 'readhub',
+        items: [],
+        icon: '',
+        query: '',
+      };
+      rss.items = uniqueArr(items, 'id');
+      return rss;
+    }
     const domParser = new DOMParser();
     const doc = domParser.parseFromString(res.data, 'text/xml');
     const rss = {

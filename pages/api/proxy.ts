@@ -24,7 +24,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const origin = new URL(url).origin;
     for (const key in result.headers) {
       if (
-        !['transfer-encoding', 'x-frame-options'].includes(key.toLowerCase())
+        !['transfer-encoding', 'x-frame-options','set-cookie'].includes(key.toLowerCase())
       ) {
         res.setHeader(key, result.headers[key]);
       }

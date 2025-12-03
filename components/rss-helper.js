@@ -84,7 +84,7 @@ function filterList(arr) {
   arr.items = list;
   return arr;
 }
-const charFilter = (html) => {
+const charFilter = (html = "") => {
   return html.replace(/&lt;|&gt;|&amp;|<!\[CDATA\[|\]\]>|<script>|<\/script>|<style>|<\/style>|<link/ig, match => {
     const map = {
       '&lt;': '<',
@@ -148,7 +148,7 @@ function getItemsFromFeed(docList) {
 }
 const formatReadhubItems = (res) => {
 
-  return res?.data?.data?.items.map(item=>({
+  return res?.data?.data?.items.map(item => ({
     title: item.title,
     link: item.url,
     description: item.summary,

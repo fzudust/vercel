@@ -32,8 +32,6 @@ import {
   getIcon,
 } from '../components/rss-helper';
 import IndexedDB from "../components/indexdb"
-import loadjs from "../components/loadjs"
-import axios from 'axios';
 
 const timeFormat = 'YYYY-MM-DD HH:mm:ss';
 const pageRef = createRef<HTMLDivElement>();

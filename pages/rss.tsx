@@ -149,7 +149,7 @@ function useRssList(): UseRssRes {
   const [rssList, setRssList] = useState<Rss[]>([]);
   const [rssIndex, setRssIndex] = useState<number>(0);
   const [itemIndex, setItemIndex] = useState<number>(0);
-  const dbRef = useRef<IndexedDB>();
+  const dbRef = useRef<IndexedDB | undefined>(undefined);
 
   const changeRss = useCallback((i: number) => {
     rssRef.current?.scrollTo(0, 0);
@@ -600,7 +600,9 @@ const RssReader: NextPage = () => {
 
   useEffect(() => {
     const load = async () => {
-      if ('serviceWorker' in navigator) {
+      // 仅在生产环境注册 service worker，避免开发时缓存 dev chunks
+      // （service worker 对 .js 采用 cache-first，会导致升级依赖后浏览器仍加载旧 chunk）
+      if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
         const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
         console.log(registration);
       }

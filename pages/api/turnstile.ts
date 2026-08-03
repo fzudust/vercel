@@ -12,7 +12,7 @@ async function handler(req: NextRequest) {
     const body = await req.json();
     // Turnstile injects a token in "cf-turnstile-response".
     const token: string = body.token || '';
-    const ip: string = req.ip || '';
+    const ip: string = req.headers.get('x-forwarded-for') || '';
     let formData = new FormData();
     formData.append('secret', SECRET_KEY);
     formData.append('response', token);

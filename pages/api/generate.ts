@@ -1,6 +1,6 @@
 
 import type { NextRequest } from 'next/server';
-import { createParser, EventSourceParseCallback } from 'eventsource-parser';
+import { createParser } from 'eventsource-parser';
 
 export const config = {
   runtime: 'edge',
@@ -47,8 +47,8 @@ async function handler(req: NextRequest) {
 
     const stream = new ReadableStream({
       async start(controller) {
-        const streamParser: EventSourceParseCallback = (event) => {
-          if (event.type === 'event') {
+        const parser = createParser({
+          onEvent(event) {
             const data = event.data
             if (data === '[DONE]') {
               controller.close()
@@ -71,10 +71,9 @@ async function handler(req: NextRequest) {
             } catch (e) {
               controller.error(e)
             }
-          }
-        }
+          },
+        })
 
-        const parser = createParser(streamParser)
         for await (const chunk of result.body as any) {
           parser.feed(decoder.decode(chunk))
         }

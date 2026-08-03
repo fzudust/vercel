@@ -22,8 +22,21 @@ self.addEventListener('install', (event) => {
   event.waitUntil(self.skipWaiting())
 });
 
+self.addEventListener('activate', (event) => {
+  // 清理旧版本缓存（如之前手写实现遗留的 'cache'），并立即接管客户端
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(
+      keys
+        .filter(key => !key.startsWith('vercel-'))
+        .map(key => caches.delete(key))
+    );
+    await self.clients.claim();
+  })());
+});
+
 // https://www.jsdelivr.com/
-/* const version = '6.5.3';
+const version = '7.1.0';
 const cdn = `https://cdn.jsdelivr.net/npm/`;
 const swjs = `${cdn}workbox-sw@${version}/build/workbox-sw.js`;
 self.importScripts(swjs);
@@ -31,7 +44,6 @@ const dev = false;
 workbox.setConfig({
   debug: dev,
   modulePathCb(e) {
-    console.log('workbox-module:', e);
     return `${cdn}${e}@${version}/build/${e}.${dev ? 'dev' : 'prod'}.js`;
   }
 });
@@ -45,97 +57,26 @@ otherjs.forEach(function (e) {
   self.importScripts(url);
 })
 
-const filter = (url, arr) => {
-  const filter = arr.filter(regexp => url.href.match(regexp));
-  return filter.length > 0
-}
-
-const { registerRoute, Route } = workbox.routing;
+const { registerRoute } = workbox.routing;
 const { CacheFirst } = workbox.strategies;
-const { CacheableResponsePlugin } = workbox.cacheableResponse;
+const { CacheableResponsePlugin } = workbox.cacheable_response;
 
-const cacheRoute = new Route(({ url }) => {
-  return filter(url, [
-    /.+(?:\.js|\.css)$/ig,
-    /.+(?:\.ico|\.svg|\.woff|\.png|\.jpg|\.jpeg|\.webp)$/ig,
-    /.+iframe\.html/ig,
-  ])
-}, new CacheFirst({
-  cacheName: 'cache',
+// 跨源静态资源（CSS / JS / 图片 / 字体）走 CacheFirst。
+// proxy 注入了 <base href="外部origin">，iframe 内相对资源会解析到外部源，
+// 这些请求仍由被 SW 控制的 iframe 发起，因此能被拦截并缓存。
+// 跨源 no-cors 响应为 opaque（status 0），CacheableResponsePlugin 显式允许 [0, 200]。
+const staticAssets = new CacheFirst({
+  cacheName: 'static-assets',
   plugins: [new CacheableResponsePlugin({ statuses: [0, 200] })],
-}));
-
-registerRoute(cacheRoute); */
-class Semaphore {
-  constructor(available) {
-    // available 为最大的并发数量
-    this.available = available;
-    this.waiters = [];
-    // this._continue = this._continue.bind(this);
-  }
-
-  acquire(callback) {
-    if (this.available > 0) {
-      this.available--;
-      callback();
-    } else {
-      this.waiters.push(callback);
-    }
-  }
-
-  release() {
-    this.available++;
-    if (this.waiters.length > 0) {
-      requestAnimationFrame(this._continue);
-    }
-  }
-
-  _continue = () => {
-    if (this.available > 0) {
-      if (this.waiters.length > 0) {
-        this.available--;
-        const callback = this.waiters.shift();
-        callback();
-      }
-    }
-  }
-}
-
-const semaphore = new Semaphore(300);
-const regexp = /.+(?:\.js|\.css|\.ico).*/ig;
-// 捕获请求并返回缓存数据
-self.addEventListener('fetch', (event) => {
-  semaphore.acquire(() => {
-    const { request } = event;
-    const shouldBeCache = request.url.match(regexp);
-    let isCached = true;
-    let res;
-    if (shouldBeCache) {
-      res = caches.match(request).then((response) => {
-        if (!response) {
-          isCached = false;
-          return fetch(request)
-        } else {
-          return response;
-        }
-      }).then(response => {
-        if (!isCached) {
-          caches.open('cache').then((cache) => {
-            cache.put(request, response);
-          }).catch(e => {
-            console.error('cache error:', e);
-          });
-        }
-        return response.clone();
-      }).catch((e) => {
-        console.error('service worker fetch error:', e, request);
-        throw e;
-      });
-    } else {
-      res = fetch(request)
-    }
-    event.respondWith(res);
-    semaphore.release();
-  })
-
 });
+
+registerRoute(
+  ({ url }) => /\.(?:js|css|ico|svg|png|jpe?g|webp|gif|avif|woff2?|ttf|eot|otf)$/i.test(url.href),
+  staticAssets
+);
+
+// iframe 模板（同源）也缓存
+registerRoute(
+  ({ url }) => /iframe\.html$/i.test(url.pathname),
+  staticAssets
+);

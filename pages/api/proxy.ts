@@ -33,6 +33,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       .replace(/<script/gi, '<noscript')
       .replace(/<script/gi, '<noscript')
       .replace(/<\/script>/gi, '</noscript>')
+      // 去掉静态资源 href/src 中的查询参数（如 combo.css?t=1785745200），
+      // 使 URL 稳定，便于 Service Worker 跨网址缓存命中
+      .replace(/((?:href|src)\s*=\s*")([^"]*?\.(?:css|js|png|jpe?g|gif|svg|webp|ico|woff2?|ttf|eot|otf))\?[^"]*"/gi, '$1$2"')
       .replace(/<head>/gi, `<head><base href="${origin}" />`)
       .replace(/<\/head>/gi, `<link href="https://vercel-fzudust.vercel.app/iframe.css" rel="stylesheet"></head>`);
     const ms = Date.now() - start;

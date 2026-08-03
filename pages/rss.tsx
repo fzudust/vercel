@@ -478,7 +478,7 @@ function Content(props: ContentProps) {
         e.preventDefault();
         if (isShow) return;
         const a = e.currentTarget;
-        const url = `/api/proxy?url=${a.href}&t=iframehtml`;
+        const url = `/api/proxy?url=${a.href}`;
         if (iframeRef.current!.src !== location.origin + url) {
           iframeRef.current!.src = url;
         }
@@ -493,7 +493,7 @@ const iframeOnLoad = (e: SyntheticEvent<HTMLIFrameElement, Event>, rss: Rss, ite
   if (!iframeRef.current!.src || (e.target as HTMLIFrameElement).src !== iframeRef.current!.src) return;
   const iframeDocument = iframeRef.current!.contentDocument;
   if (!iframeDocument) return;
-  if (rss && rss.query && iframeRef.current!.src === `${location.origin}/api/proxy?url=${item.link}&t=iframehtml`) {
+  if (rss && rss.query && iframeRef.current!.src === `${location.origin}/api/proxy?url=${item.link}`) {
     const content = contentRef.current;
     const query = iframeDocument.querySelector(rss.query);
     if (query) {
@@ -565,7 +565,7 @@ const RssReader: NextPage = () => {
   } = useRssList();
 
   const flag = rss && !rss.loading && item && item.link;
-  const iframeUrl = flag && `/api/proxy?url=${item.link}&t=iframehtml` || undefined;
+  const iframeUrl = flag && `/api/proxy?url=${item.link}` || undefined;
   const [pageWidth, setPageWidth] = useState(0);
   const [isValid, setIsValid] = useState(false);
 

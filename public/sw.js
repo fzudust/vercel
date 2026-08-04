@@ -18,12 +18,21 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
+// 跨源 <img> 是 no-cors 请求，SW 只能对它返回 opaque 响应；
+// 返回 basic/default 会被 Chrome 以 ERR_BLOCKED_BY_RESPONSE.NotSameOrigin 拦截。
+// 因此 fallback 图片必须以 mode:'no-cors' 拉取并缓存为 opaque 响应。
+// opaque 响应对 <img> 仍可渲染（浏览器内核解码，JS 读不到 body）。
+const FALLBACK_URL = '/user.png';
+const fallbackRequest = () => new Request(FALLBACK_URL, { mode: 'no-cors' });
+
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     try {
-      // 预缓存兜底图片，离线 / 网络失败时图片 fallback 仍可用
       const cache = await caches.open('vercel-fallback-v1');
-      await cache.add(new Request('./user.png', { cache: 'reload' }));
+      const resp = await fetch(fallbackRequest(), { cache: 'reload' });
+      // cache.add 会对 status=0 的 opaque 响应 reject，必须用 cache.put；
+      // 且 put 存 opaque 时要求 request.mode === 'no-cors'，故用 fallbackRequest()。
+      await cache.put(fallbackRequest(), resp);
     } catch (e) {
       console.error('预缓存兜底图片失败', e);
     }
@@ -72,16 +81,19 @@ const { CacheableResponsePlugin } = workbox.cacheable_response;
 
 const imageExtRegex = /\.(?:ico|svg|png|jpe?g|webp|gif|avif)$/i;
 
-// 缓存未命中且网络拉取失败时，图片 fallback 到 ./user.png；非图片资源照常抛错，
+// 缓存未命中且网络拉取失败时，图片 fallback 到兜底图片；非图片资源照常抛错，
 // 避免用一张图片顶替 JS/CSS/字体从而破坏页面。
+// 必须返回 opaque 响应：跨源 <img> 是 no-cors 请求，SW 返回 basic 响应会被
+// Chrome 以 ERR_BLOCKED_BY_RESPONSE.NotSameOrigin 拦截。
 const imageFallbackPlugin = {
   async handlerDidError({ request }) {
     if (!imageExtRegex.test(request.url)) {
       throw new Error('No response found; non-image asset has no fallback.');
     }
     const cache = await caches.open('vercel-fallback-v1');
-    return (await cache.match('./user.png'))
-      || fetch('./user.png', { cache: 'reload' });
+    const req = fallbackRequest();
+    return (await cache.match(req))
+      || fetch(req, { cache: 'reload' });
   },
 };
 

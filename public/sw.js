@@ -19,7 +19,16 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(self.skipWaiting())
+  event.waitUntil((async () => {
+    try {
+      // 预缓存兜底图片，离线 / 网络失败时图片 fallback 仍可用
+      const cache = await caches.open('vercel-fallback-v1');
+      await cache.add(new Request('./user.png', { cache: 'reload' }));
+    } catch (e) {
+      console.error('预缓存兜底图片失败', e);
+    }
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', (event) => {
@@ -61,13 +70,31 @@ const { registerRoute } = workbox.routing;
 const { CacheFirst } = workbox.strategies;
 const { CacheableResponsePlugin } = workbox.cacheable_response;
 
+const imageExtRegex = /\.(?:ico|svg|png|jpe?g|webp|gif|avif)$/i;
+
+// 缓存未命中且网络拉取失败时，图片 fallback 到 ./user.png；非图片资源照常抛错，
+// 避免用一张图片顶替 JS/CSS/字体从而破坏页面。
+const imageFallbackPlugin = {
+  async handlerDidError({ request }) {
+    if (!imageExtRegex.test(request.url)) {
+      throw new Error('No response found; non-image asset has no fallback.');
+    }
+    const cache = await caches.open('vercel-fallback-v1');
+    return (await cache.match('./user.png'))
+      || fetch('./user.png', { cache: 'reload' });
+  },
+};
+
 // 跨源静态资源（CSS / JS / 图片 / 字体）走 CacheFirst。
 // proxy 注入了 <base href="外部origin">，iframe 内相对资源会解析到外部源，
 // 这些请求仍由被 SW 控制的 iframe 发起，因此能被拦截并缓存。
 // 跨源 no-cors 响应为 opaque（status 0），CacheableResponsePlugin 显式允许 [0, 200]。
 const staticAssets = new CacheFirst({
   cacheName: 'static-assets',
-  plugins: [new CacheableResponsePlugin({ statuses: [0, 200] })],
+  plugins: [
+    new CacheableResponsePlugin({ statuses: [0, 200] }),
+    imageFallbackPlugin,
+  ],
 });
 
 registerRoute(

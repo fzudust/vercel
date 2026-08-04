@@ -77,7 +77,7 @@ otherjs.forEach(function (e) {
 
 const { registerRoute } = workbox.routing;
 const { CacheFirst } = workbox.strategies;
-const { CacheableResponsePlugin } = workbox.cacheable_response;
+const { CacheableResponsePlugin } = workbox.cacheableResponse;
 
 const imageExtRegex = /\.(?:ico|svg|png|jpe?g|webp|gif|avif)$/i;
 

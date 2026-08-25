@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps,jsx-a11y/alt-text */
 import type { NextPage } from 'next'
-import React, {
+import {
   useRef,
   useState,
   useEffect,
@@ -16,16 +16,13 @@ import {
   Input,
   Button,
   Modal,
-  message,
 } from 'antd';
-const { TextArea } = Input;
 import {
   DownloadOutlined,
   SearchOutlined,
   UploadOutlined,
   RollbackOutlined,
   CloseCircleOutlined,
-  DatabaseOutlined,
 } from '@ant-design/icons';
 import {
   getRss,
@@ -43,7 +40,6 @@ const rssListRef = createRef<HTMLElement>();
 const rssRef = createRef<HTMLElement>();
 const contentRef = createRef<HTMLDivElement>();
 const searchRef = createRef<HTMLDivElement>();
-const fileHandleRef = createRef<FileSystemFileHandle>();
 
 
 function Image(props: any) {
@@ -55,7 +51,6 @@ declare global {
   interface Window {
     // cleanCache: () => void;
     // refreshDB: () => void;
-    showSaveFilePicker: (option?: {}) => FileSystemFileHandle;
     turnstilecallback: () => void
     turnstile: {
       render: (id: string, config: {}) => string
@@ -96,7 +91,6 @@ interface UseRssRes {
   changeItem: (i: number) => void;
   initRssList: (data: Rss[], isWriteDb?: boolean) => void;
   refreshDB: () => void;
-  addCache: (url: string, body: string) => Promise<void>;
 }
 
 interface SearchBarProps {
@@ -105,7 +99,6 @@ interface SearchBarProps {
   addRss: (url: string) => Promise<void>;
   updateRss: (query?: string) => Promise<void>;
   initRssList: (data: Rss[], isWriteDb?: boolean) => void;
-  addCache: (url: string, body: string) => Promise<void>;
 }
 
 interface RssListProps {
@@ -132,22 +125,6 @@ interface PageIframeProps {
   item: RssItem,
   rss: Rss,
   pageWidth: number,
-}
-
-const writeFile = async (list: Rss[]) => {
-  if (!fileHandleRef.current) return;
-  console.log(fileHandleRef);
-  try {
-    // @ts-ignore：类型“FileSystemFileHandle”上不存在属性“createWritable”。
-    const writableStream = await fileHandleRef.current.createWritable();
-    const blob = new Blob([JSON.stringify(list)], {
-      type: 'application/json'
-    });
-    await writableStream.write(blob);
-    await writableStream.close();
-  } catch (error) {
-    console.error('写入失败', error);
-  }
 }
 
 function useRssList(): UseRssRes {
@@ -258,29 +235,6 @@ function useRssList(): UseRssRes {
     }
   }, [rssList])
 
-  // 手动将指定 URL 与自定义 response 内容写入 Service Worker 使用的同一缓存
-  // (vercel-static-assets-v1)，用 new Response(body) 构造响应，不依赖网络请求，
-  // 因此不受 CORS 限制，可缓存任意源的资源或自定义内容。
-  const addCache = useCallback(async (url: string, body: string) => {
-    if (!url) {
-      message.warning('请输入缓存地址');
-      return;
-    }
-    try {
-      const cache = await caches.open('vercel-static-assets-v1');
-      // 用用户输入的内容直接构造响应，status 200 可被 CacheableResponsePlugin 接受
-      const response = new Response(body, {
-        status: 200,
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-      });
-      await cache.put(url, response);
-      message.success('缓存成功');
-    } catch (error) {
-      console.error('缓存失败', error);
-      message.error('缓存失败');
-    }
-  }, [])
-
   useEffect(() => {
     const db = new IndexedDB({
       name: 'nest-next' as any,
@@ -297,7 +251,6 @@ function useRssList(): UseRssRes {
   }, []);
   useEffect(() => {
     updateRss()
-    writeFile(rssList);
   }, [rssIndex]);
   return {
     rssList,
@@ -317,7 +270,6 @@ function useRssList(): UseRssRes {
     changeItem,
     initRssList,
     refreshDB,
-    addCache,
   }
 
 }
@@ -329,14 +281,9 @@ function SearchBar(props: SearchBarProps) {
     addRss,
     updateRss,
     initRssList,
-    addCache,
   } = props;
   const [url, setUrl] = useState('');
   const [query, setQuery] = useState('');
-  const [cacheOpen, setCacheOpen] = useState(false);
-  const [cacheUrl, setCacheUrl] = useState('');
-  const [cacheBody, setCacheBody] = useState('');
-  const [cacheLoading, setCacheLoading] = useState(false);
   const fileRef = createRef<HTMLInputElement>();
   const aRef = createRef<HTMLAnchorElement>();
 
@@ -387,51 +334,6 @@ function SearchBar(props: SearchBarProps) {
         aRef.current!.href = URL.createObjectURL(blob);
         aRef.current?.click();
       }}>导出</Button>
-      <Button onClick={async () => {
-        // @ts-ignore：无法分配到 "current" ，因为它是只读属性。
-        fileHandleRef.current = await window.showSaveFilePicker({
-          suggestedName: 'export-file.json',
-          types: [{
-            description: 'json',
-            accept: { 'application/json': ['.json'] },
-          }],
-        });
-      }}>文件</Button>
-      <Button icon={<DatabaseOutlined />} onClick={() => setCacheOpen(true)}>缓存</Button>
-      <Modal
-        title="新增缓存"
-        open={cacheOpen}
-        onCancel={() => setCacheOpen(false)}
-        confirmLoading={cacheLoading}
-        onOk={async () => {
-          setCacheLoading(true);
-          try {
-            await addCache(cacheUrl, cacheBody);
-            setCacheOpen(false);
-            setCacheUrl('');
-            setCacheBody('');
-          } finally {
-            setCacheLoading(false);
-          }
-        }}
-      >
-        <Input
-          addonBefore="URL:"
-          placeholder="https://example.com/static/style.css"
-          value={cacheUrl}
-          onChange={e => setCacheUrl(e.target.value)}
-        />
-        <div style={{ marginTop: 12 }}>Response 内容：</div>
-        <TextArea
-          rows={6}
-          placeholder="输入该 URL 对应的 response 内容（如 CSS/JS/HTML 文本）"
-          value={cacheBody}
-          onChange={e => setCacheBody(e.target.value)}
-        />
-        <p style={{ marginTop: 8, color: '#999', fontSize: 12 }}>
-          将该 URL 与自定义 response 内容写入 Service Worker 缓存 (vercel-static-assets-v1)，下次访问该 URL 时直接命中缓存并返回此内容。
-        </p>
-      </Modal>
       <a ref={aRef} download='export.json' />
       <input
         type='file'
@@ -630,14 +532,12 @@ const RssReader: NextPage = () => {
     changeRss,
     changeItem,
     initRssList,
-    addCache,
     // refreshDB,
   } = useRssList();
 
   const flag = rss && !rss.loading && item && item.link;
   const iframeUrl = flag && `/api/proxy?url=${item.link}` || undefined;
   const [pageWidth, setPageWidth] = useState(0);
-  const [isValid, setIsValid] = useState(false);
 
   const searchBarProps = {
     rss,
@@ -645,7 +545,6 @@ const RssReader: NextPage = () => {
     addRss,
     updateRss,
     initRssList,
-    addCache,
   };
   const rssListProps = {
     rss,
